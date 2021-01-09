@@ -1,39 +1,47 @@
 package controller;
 
 import model.CheckInPoint;
-import model.Flight;
 import model.Passenger;
-import repository.Repository;
-import repository.RepositoryInterface;
+import repository.CheckInPointRepository;
+import repository.FlightRepository;
 
-import java.util.stream.Collectors;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 
 public class Controller {
-    RepositoryInterface checkInPointRepository;
-    RepositoryInterface flightRepository;
-    RepositoryInterface passengerRepository;
-    RepositoryInterface luggageRepository;
+    FlightRepository flightRepository;
+    CheckInPointRepository checkInPointRepository;
+    private Connection connection;
+    private Statement statement;
 
     public Controller(){
-        checkInPointRepository = new Repository();
-        flightRepository = new Repository();
-        passengerRepository = new Repository();
+        try {
+            String url = "jdbc:sqlserver://localhost\\MSSQLSERVER:1433;database=AirportSimulation";
+            String user = "root";
+            String password = "qwerty123";
+            connection = DriverManager.getConnection(url, user, password);
+            statement = connection.createStatement();
+        }catch (SQLException exception) {
+            exception.printStackTrace();
+        } finally {
+            assert statement != null;
+            flightRepository = new FlightRepository(statement);
+            checkInPointRepository = new CheckInPointRepository(statement);
+        }
+    }
+    public void test() {
+        System.out.println(flightRepository.getFlights());
+        System.out.println(checkInPointRepository.getCheckInPoints());
+    }
+
+    public ArrayList<CheckInPoint> getCheckInPoints() {
+        return checkInPointRepository.getCheckInPoints();
     }
 
     public boolean verificication(Passenger passenger){
-        var checkInID = passenger.getCheckInID();
-
-        CheckInPoint checkInPoint = (CheckInPoint) checkInPointRepository.getByID(checkInID);
-
-        if(checkInPoint.getFlightID() != passenger.getFlightID())
-            return false;
-
-        var flightID = passenger.getFlightID();
-        Flight flight = (Flight) flightRepository.getByID(flightID);
-
-        if (!flight.checkPassenger(passenger))
-            return false;
-
         return true;
     }
 }
